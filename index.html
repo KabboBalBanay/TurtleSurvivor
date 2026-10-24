@@ -1,5 +1,7 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <title>Tirtle Survivors</title>
 <style>
 :root{--bg:#141a16;--fg:#fff;--ac:#ffd23f;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -14,8 +16,11 @@ button{font:inherit;color:inherit;cursor:pointer;border:3px solid var(--ac);back
 button:hover{transform:scale(1.07) rotate(-1deg)}
 button:disabled{opacity:.4;cursor:default;transform:none}#bt{position:fixed;right:10px;bottom:calc(10px + env(safe-area-inset-bottom,0px));display:flex;gap:8px}#bt button{padding:6px 12px;font-size:20px;border-radius:12px;border-width:2px}.cd{width:170px;display:flex;flex-direction:column;gap:6px;align-items:center}
 .cd b{font-size:40px}.cd small{font-weight:400;opacity:.8;font-size:14px}
+#rot{display:none;position:fixed;inset:0;z-index:99;background:#141a16;color:#ffd23f;align-items:center;justify-content:center;flex-direction:column;gap:10px;font-size:24px;font-weight:700;text-align:center}
+@media (orientation:portrait) and (pointer:coarse){#rot{display:flex}}
 </style></head><body>
 <canvas id="c"></canvas><div id="ui"></div><div id="bt"><button id="pz">⏸</button><button id="mu">🔊</button></div>
+<div id="rot"><div style="font-size:70px">📱↻</div>Rotate your phone</div>
 <script>
 const cv=document.getElementById('c'),g=cv.getContext('2d',{alpha:false}),ui=document.getElementById('ui');
 let W,H,DPR,SP={};function rs(){SP={};DPR=Math.min(devicePixelRatio||1,1.5);W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR}
@@ -39,7 +44,17 @@ function pause(){if(S.mode==='play'){S.mode='pause';show('<h2>⏸ PAUSED</h2><bu
 function init(){S={t:0,en:[],eg:[],gem:[],pt:[],tx:[],cam:{x:0,y:0},shake:0,freeze:0,zoom:0,flash:0,kills:0,spawn:0,boss:false,bossT:90,wf:0,sp:[],slow:0,nb:0,co:0,mode:'menu',combo:0,comboT:0,bn:'',bt:0,pk:0,pkT:0,
 p:{x:0,y:0,vx:0,vy:0,hp:100+15*SV.up.hp,mhp:100+15*SV.up.hp,spd:175*(1+.05*SV.up.spd),cd:0,rate:.7*Math.pow(.95,SV.up.rate),cnt:1,dmg:10*(1+.08*SV.up.dmg),pierce:0,mag:90*(1+.15*SV.up.mag),splash:0,cr:.15,vamp:0,nova:0,nt:0,orb:0,oa:0,inv:0,face:1,lvl:1,xp:0,need:5,sq:0}}}
 function show(h){ui.innerHTML=h;ui.style.display='flex'}function hide(){ui.style.display='none'}
-function start(){init();S.mode='play';hide();AC&&AC.resume&&AC.resume();snd(300,.2,'triangle',.08,2)}
+function goFS(){
+  const d=document.documentElement,f=d.requestFullscreen||d.webkitRequestFullscreen;
+  const lock=()=>{try{screen.orientation.lock('landscape').catch(()=>{})}catch(e){}};
+  try{
+    if(f&&!document.fullscreenElement&&!document.webkitFullscreenElement){
+      const r=f.call(d);
+      r&&r.then?r.then(lock).catch(()=>{}):lock();
+    }else lock();
+  }catch(e){}
+}
+function start(){init();S.mode='play';hide();goFS();AC&&AC.resume&&AC.resume();snd(300,.2,'triangle',.08,2)}
 function menu(){init();home()}function menuOld(){show('<h1>🐢 TIRTLE SURVIVORS</h1><p>Tirtle shoots eggs on his own. You just survive.<br>WASD / arrows or drag to move.</p><button id=go>🥚 START</button>');document.getElementById('go').onclick=start}
 function banner(t){S.bn=t;S.bt=2}
 addEventListener('keydown',e=>{const k=e.key.toLowerCase();K[k]=1;if(k==='p'||k==='escape')pause();if(S.mode==='lvl'&&'123'.includes(k))ui.querySelectorAll('.cd')[+k-1]?.click();if((S.mode==='over'||S.mode==='menu')&&(k==='enter'||k==='r')&&document.getElementById('go'))start()});
@@ -134,5 +149,7 @@ const B=S.en.find(e=>e.k==='boss');if(B){g.fillStyle='#0009';g.fillRect(W/2-150,
 if(S.bt>0){const a=Math.min(1,S.bt*2),s=1+Math.max(0,S.bt-1.7)*3;g.globalAlpha=a;txt(S.bn,W/2,H*.3,Math.min(48,W/12)*s,'#ffd23f');g.globalAlpha=1}
 if(J&&S.mode==='play'){g.globalAlpha=.4;g.strokeStyle='#fff';g.lineWidth=3;g.beginPath();g.arc(J.ox,J.oy,60,0,TAU);g.stroke();g.fillStyle='#fff';g.beginPath();const dx=J.x-J.ox,dy=J.y-J.oy,d=Math.min(60,Math.hypot(dx,dy)),a=Math.atan2(dy,dx);g.arc(J.ox+Math.cos(a)*d,J.oy+Math.sin(a)*d,24,0,TAU);g.fill();g.globalAlpha=1}}
 function loop(ts){const sh=S.mode==='play'||S.mode==='pause';if(sh!==PS){PS=sh;PZ.style.display=sh?'':'none'}let dt=Math.min((ts-last)/1000||0,.05);last=ts;ft+=(dt-ft)*.05;if(ft>.026&&Q>.25)Q-=.004;else if(ft<.02&&Q<1)Q+=.002;if(S.slow>0){S.slow-=dt;dt*=.25}if(S.mode==='play')upd(dt);if(S.mode==='play'||S.mode==='over')fx(dt);draw();requestAnimationFrame(loop)}
-let PS=null;const PZ=document.getElementById('pz');PZ.onclick=pause;document.getElementById('mu').onclick=mute;document.getElementById('mu').textContent=MU?'🔇':'🔊';document.addEventListener('visibilitychange',()=>{if(document.hidden&&S.mode==='play')pause()});menu();requestAnimationFrame(loop);
+let PS=null;const PZ=document.getElementById('pz');PZ.onclick=pause;document.getElementById('mu').onclick=mute;document.getElementById('mu').textContent=MU?'🔇':'🔊';document.addEventListener('visibilitychange',()=>{if(document.hidden&&S.mode==='play')pause()});
+matchMedia('(orientation:portrait) and (pointer:coarse)').addEventListener('change',e=>{if(e.matches&&S.mode==='play')pause()});
+menu();requestAnimationFrame(loop);
 </script></body></html>
